@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espiral em Forma de Caracol Sincronizada com Música</title>
+    <style>
+        /* Centraliza todo o conteúdo da página */
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        #output {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60vmin;
+            height: 60vmin;
+            overflow: visible;
+            border: 3px solid #000;
+            z-index: 1;
+            transition: transform 0.1s;
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            overflow: hidden;
+            border: 2px solid #2980b9;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .square img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #startButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            position: absolute;
+            top: 20px;
+            z-index: 2;
+        }
+
+        #startButton:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <button id="startButton">Iniciar o Caracol</button>
+    <div id="output"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let output = document.getElementById('output');
+            let startButton = document.getElementById('startButton');
+            let angle = 0;
+            let radius = 10;
+            const squareSize = 10;
+            const baseAngleIncrement = 0.15;
+            const baseRadiusIncrement = 3;
+            let angleIncrement = baseAngleIncrement;
+            let radiusIncrement = baseRadiusIncrement;
+            let animationFrameId = null;
+            let audioContext, audioSource, analyser, dataArray;
+
+            // Carrega e configura o áudio da música "musica.mp3"
+            const audio = new Audio('musica.mp3');
+            audio.loop = true;
+            audio.crossOrigin = "anonymous";
+
+            // Verifica se o áudio está carregando corretamente
+            audio.addEventListener('error', function(e) {
+                console.error('Erro ao carregar a música:', e);
+                alert('Erro ao carregar a música. Verifique se o arquivo "musica.mp3" está na mesma pasta e se o nome está correto.');
+            });
+
+            // Configurações do Analisador de Áudio
+            function setupAudioAnalyser() {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 512;
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                    audioSource = audioContext.createMediaElementSource(audio);
+                    audioSource.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                } catch (error) {
+                    console.error('Erro ao configurar o analisador de áudio:', error);
+                    alert('Erro ao configurar o analisador de áudio. Verifique as permissões do navegador.');
+                }
+            }
+
+            // Detecta batidas na música
+            function detectBeats() {
+                analyser.getByteFrequencyData(dataArray);
+
+                // Obtém a média dos valores de frequência
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                let average = sum / dataArray.length;
+
+                // Acelera o crescimento da espiral com base na intensidade da música
+                if (average > 150) {
+                    angleIncrement = baseAngleIncrement * 2;
+                    radiusIncrement = baseRadiusIncrement * 2;
+                } else {
+                    angleIncrement = baseAngleIncrement;
+                    radiusIncrement = baseRadiusIncrement;
+                }
+            }
+
+            // Função para animar a espiral
+            function animateSpiral() {
+                detectBeats();
+
+                let x = Math.cos(angle) * radius + output.clientWidth / 2;
+                let y = Math.sin(angle) * radius + output.clientHeight / 2;
+
+                let newSquare = document.createElement('div');
+                newSquare.className = 'square';
+                newSquare.style.width = `${squareSize}px`;
+                newSquare.style.height = `${squareSize}px`;
+                newSquare.style.left = `${x - squareSize / 2}px`;
+                newSquare.style.top = `${y - squareSize / 2}px`;
+
+                let img = document.createElement('img');
+                img.src = 'caracol.png';
+                img.alt = 'Imagem do Caracol';
+                newSquare.appendChild(img);
+
+                output.appendChild(newSquare);
+
+                angle += angleIncrement;
+                radius += radiusIncrement;
+
+                output.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+
+                animationFrameId = requestAnimationFrame(animateSpiral);
+            }
+
+            // Evento de clique para iniciar a animação
+            startButton.addEventListener('click', function () {
+                startButton.style.display = 'none';
+                if (animationFrameId === null) {
+                    audio.play()
+                        .then(() => {
+                            setupAudioAnalyser();
+                            animateSpiral();
+                        })
+                        .catch(error => {
+                            console.error('Erro ao tentar tocar a música:', error);
+                            alert('Erro ao tentar tocar a música. Verifique se seu navegador permite a reprodução de áudio.');
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

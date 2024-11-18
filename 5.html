@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espiral Giratória com Música</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            overflow: hidden;
+        }
+
+        #progressContainer {
+            width: 80%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background-color: #ff5733;
+            border-radius: 10px;
+            transition: width 0.1s;
+        }
+
+        #status {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #scaleContainer {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        #scale {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .scaleValue {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            margin-top: 10px;
+        }
+
+        #spiralCanvas {
+            border: 1px solid black;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tocar Música com Espiral Giratória</h1>
+    <audio id="audioPlayer">
+        <source src="musica.mp3" type="audio/mpeg">
+        Seu navegador não suporta o elemento de áudio.
+    </audio>
+    
+    <button onclick="tocarMusica()">Tocar Música</button>
+    <button onclick="pausarMusica()">Pausar Música</button>
+
+    <div id="progressContainer">
+        <div id="progressBar"></div>
+    </div>
+
+    <div id="status">Música parada</div>
+
+    <!-- Escala de 0 a 10 -->
+    <div id="scaleContainer">
+        <div id="scale">Escala de Intensidade</div>
+        <div class="scaleValue">
+            <span id="scaleValue">0</span> / 10
+        </div>
+    </div>
+
+    <!-- Canvas para a espiral -->
+    <canvas id="spiralCanvas" width="600" height="600"></canvas>
+
+    <script>
+        const audio = document.getElementById('audioPlayer');
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        const scaleValue = document.getElementById('scaleValue');
+        const canvas = document.getElementById('spiralCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuração da API Web Audio
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioSource = audioContext.createMediaElementSource(audio);
+        const analyser = audioContext.createAnalyser();
+
+        audioSource.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        // Configuração do analisador
+        analyser.fftSize = 512; // Ajustando a resolução de FFT
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        let isAudioContextResumed = false;  // Flag para garantir que o AudioContext seja resumido apenas uma vez
+
+        // Variáveis para a espiral
+        let angle = 0;
+        let radius = 5;
+        let centerX = canvas.width / 2;
+        let centerY = canvas.height / 2;
+
+        // Variáveis para controlar a "redução" da espiral
+        const maxRadius = Math.min(canvas.width, canvas.height) / 2 - 10; // Raio máximo permitido (meio do canvas)
+        let currentRadius = radius;
+        let bolinhas = [];
+
+        function tocarMusica() {
+            // Resumir o AudioContext (necessário em alguns navegadores)
+            if (audioContext.state === 'suspended' && !isAudioContextResumed) {
+                audioContext.resume().then(() => {
+                    isAudioContextResumed = true;
+                    audio.play();
+                    status.innerHTML = "Música tocando...";
+                    analisarRitmo();  // Iniciar a análise do ritmo
+                });
+            } else {
+                audio.play();
+                status.innerHTML = "Música tocando...";
+                analisarRitmo();  // Iniciar a análise do ritmo
+            }
+        }
+
+        function pausarMusica() {
+            audio.pause();
+            status.innerHTML = "Música pausada";
+        }
+
+        function analisarRitmo() {
+            if (!audio.paused) {
+                // Obtém os dados das frequências do áudio
+                analyser.getByteFrequencyData(dataArray);
+
+                // Calcula a média da intensidade do som (amplitude) de todas as frequências
+                let totalAmplitude = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    totalAmplitude += dataArray[i];
+                }
+
+                // Média da intensidade do som
+                const averageAmplitude = totalAmplitude / bufferLength;
+
+                // Ajusta a largura da barra com base na média da amplitude
+                let progress = (averageAmplitude / 255) * 100; // Converte para porcentagem
+                progressBar.style.width = Math.min(progress, 100) + '%';
+
+                // Ajusta a escala de intensidade de 0 a 10
+                const scale = Math.floor((averageAmplitude / 255) * 10); // Calcula o valor na escala de 0 a 10
+                scaleValue.innerHTML = scale;
+
+                // Atualiza a espiral com base na escala de intensidade
+                atualizarEspiral(scale);
+
+                // Continuar analisando o ritmo
+                requestAnimationFrame(analisarRitmo);
+            }
+        }
+
+        function atualizarEspiral(intensidade) {
+            // Limpa o canvas antes de desenhar
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenha todas as bolinhas armazenadas
+            for (let i = 0; i < bolinhas.length; i++) {
+                const bolinha = bolinhas[i];
+                ctx.beginPath();
+                ctx.arc(bolinha.x, bolinha.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ff5733'; // Cor laranja
+                ctx.fill();
+            }
+
+            // Desenha novas bolinhas com base na intensidade
+            for (let i = 0; i < intensidade; i++) {
+                angle += 0.1;  // Incrementa o ângulo para fazer a espiral girar
+                currentRadius += 0.5;  // Aumenta o raio para expandir a espiral
+
+                // Verifica se atingiu a borda do canvas e reseta a espiral
+                if (currentRadius > maxRadius) {
+                    // Reseta os parâmetros da espiral
+                    angle = 0;
+                    currentRadius = radius;
+                    bolinhas = [];  // Limpa as bolinhas anteriores
+                }
+
+                const x = centerX + currentRadius * Math.cos(angle);
+                const y = centerY + currentRadius * Math.sin(angle);
+
+                // Armazena as novas bolinhas
+                bolinhas.push({ x, y });
+            }
+
+            // Rotaciona o contexto para criar o efeito de giro contínuo
+            ctx.save(); // Salva o estado atual do contexto
+            ctx.translate(centerX, centerY); // Move o ponto de origem para o centro da espiral
+            ctx.rotate(0.02); // Rotaciona o contexto a cada quadro
+            ctx.translate(-centerX, -centerY); // Restaura o ponto de origem
+
+            ctx.restore(); // Restaura o estado do contexto
+        }
+
+        // Reseta a barra e o status quando a música termina
+        audio.onended = function() {
+            status.innerHTML = "Música terminada";
+            progressBar.style.width = '0%';
+            scaleValue.innerHTML = '0';
+        };
+    </script>
+    <p>aaaaaaa</p>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espiral em Forma de Caracol</title>
+    <style>
+        /* Centraliza todo o conteúdo da página */
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        /* Caixa para conter os quadrados, com um grid central */
+        #output {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 720px;
+            height: 720px;
+            overflow: hidden; /* Garante que os quadrados não saiam do limite */
+           /* border: 3px solid #000; /* Borda preta */
+            z-index: 1; /* Coloca a espiral atrás do botão */
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            overflow: hidden;
+            border: 2px solid #2980b9; /* Borda do quadrado */
+            transition: width 0.1s, height 0.1s; /* Acelera a transição */
+        }
+
+        .square img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Para garantir que a imagem se ajuste ao tamanho do quadrado */
+        }
+
+        /* Estilo do botão */
+        #startButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            position: absolute; /* Posiciona o botão acima da espiral */
+            top: 20px; /* Distancia do topo da tela */
+            z-index: 2; /* Garante que o botão fique na frente de tudo */
+        }
+
+        #startButton:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <button id="startButton">Iniciar o Caracol</button>
+    <div id="output"></div>
+
+    <script>
+        let output = document.getElementById('output');
+        let startButton = document.getElementById('startButton');
+        let angle = 0; // Ângulo inicial em radianos
+        let radius = 10; // Raio inicial da espiral
+        const squareSize = 10; // Tamanho fixo do quadrado
+        const angleIncrement = 0.15; // Incremento do ângulo para a espiral (em radianos)
+        const radiusIncrement = 3; // Incremento do raio para a espiral (ajustado para suavidade)
+        let intervalId = null; // Variável para armazenar o intervalo da animação
+
+        // Limitações da área (720px por 720px)
+        const maxWidth = 720;
+        const maxHeight = 720;
+
+        // Função para iniciar a animação
+        function startAnimation() {
+            // Esconde o botão de início após ser clicado
+            startButton.style.display = 'none';
+
+            // Evita que múltiplos intervalos sejam iniciados
+            if (intervalId !== null) return;
+
+            // Função para gerar a espiral continuamente
+            intervalId = setInterval(function() {
+                // Calcula a posição do próximo quadrado em coordenadas polares, centralizando no meio do container #output
+                let x = Math.cos(angle) * radius + maxWidth / 2;
+                let y = Math.sin(angle) * radius + maxHeight / 2;
+
+                // Cria o quadrado com a imagem
+                let newSquare = document.createElement('div');
+                newSquare.className = 'square';
+                newSquare.style.width = `${squareSize}px`;
+                newSquare.style.height = `${squareSize}px`;
+                newSquare.style.left = `${x - squareSize / 2}px`; // Centraliza o quadrado
+                newSquare.style.top = `${y - squareSize / 2}px`; // Centraliza o quadrado
+
+                // Adiciona a imagem ao quadrado
+                let img = document.createElement('img');
+                img.src = 'caracol.png';
+                img.alt = 'Imagem do Caracol';
+                newSquare.appendChild(img);
+
+                // Adiciona o quadrado ao container #output
+                output.appendChild(newSquare);
+
+                // Aumenta o ângulo e o raio para criar o efeito de espiral
+                angle += angleIncrement;
+                radius += radiusIncrement;
+
+                // Quando a espiral atingir o limite da tela, ela é "comprimida" para dentro
+                if (radius > maxWidth / 2) {
+                    radius = maxWidth / 4; // Reduz o raio para continuar a espiral para dentro
+                }
+
+                // Aplica uma rotação contínua à espiral
+                output.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+
+            }, 10); // Executa a cada 10 milissegundos
+        }
+
+        // Adiciona o evento de clique ao botão para iniciar a animação
+        startButton.addEventListener('click', startAnimation);
+    </script>
+</body>
+</html>
