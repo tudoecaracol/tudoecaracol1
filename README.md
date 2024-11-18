@@ -4,11 +4,9 @@
 ### E do 1, se fez mais 1
 O primeiro passo na criação da sequência de Fibonacci.
 
-#### E do 1 e 1, se fez 2
-Somando os dois números anteriores: 1 + 1 = 2.
+#### E do 1 + 1, se fez 2
 
-##### E do 1 e 2, se fez 3
-Somando 1 + 2 = 3.
+##### E do 1 + 2, se fez 3
 
 ###### E do 2 e 3, se fez 5
 Continuando a sequência: 2 + 3 = 5.
