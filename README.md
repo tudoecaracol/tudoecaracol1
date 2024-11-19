@@ -1,18 +1,25 @@
-# No início, havia o 0
-## E do 0, se fez 1
+# No início
 
-### E do 1, se fez mais 1
-O primeiro passo na criação da sequência de Fibonacci.
+Havia o nada
 
-#### E do 1 + 1, se fez 2
+E do nada, se fez 1
 
-##### E do 1 + 2, se fez 3
+. E do 1, se fez mais 1
 
-###### E do 2 e 3, se fez 5
-Continuando a sequência: 2 + 3 = 5.
+.. E do 2, se fez mais 1, 3
 
-###### E do 3 e 5, se fez 8
-A sequência continua: 3 + 5 = 8.
+... E do 3, se fez mais 2, 5
 
-###### E assim por diante...
-A sequência Fibonacci se expande infinitamente: 5 + 8 = 13, 8 + 13 = 21, e assim sucessivamente.
+..... E do 5, se fez mais 3, 8
+
+...... E do 8, se fez mais 5, 13
+
+....... E do 13, se fez mais 8, 21
+
+........ E do 21, se fez mais 13, 34
+
+......... E do 34, se fez mais 21, 55
+
+.......... E do 55, se fez mais 34, 89
+
+........... E do 89, se fez mais 55, 144
